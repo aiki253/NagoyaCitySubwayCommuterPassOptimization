@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>名古屋市営地下鉄定期券最適化</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        select, input, button {
+            margin: 10px 0;
+            padding: 5px;
+            width: 100%;
+        }
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>名古屋市営地下鉄定期券最適化</h1>
+    <form id="routeForm">
+        <select id="start" name="start">
+            <option value="">開始駅を選択 (未指定可)</option>
+            {% for station in stations %}
+            <option value="{{ station }}">{{ station }}</option>
+            {% endfor %}
+        </select>
+        <select id="end" name="end">
+            <option value="">終了駅を選択 (未指定可)</option>
+            {% for station in stations %}
+            <option value="{{ station }}">{{ station }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" id="via" name="via" placeholder="経由駅（カンマ区切りで複数指定可）">
+        <button type="submit">ルート検索</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('routeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            axios.post('/optimize', formData)
+                .then(function (response) {
+                    const result = response.data;
+                    let resultText = '';
+                    if (result.error) {
+                        resultText = `エラー: ${result.error}`;
+                    } else {
+                        resultText = `最適なルート: ${result.route}\n\n`;
+                        resultText += `総駅数: ${result.total_stations}\n\n`;
+                        resultText += '乗り換え情報:\n';
+                        result.transfers.forEach(transfer => {
+                            resultText += `  ${transfer}\n`;
+                        });
+                    }
+                    document.getElementById('result').textContent = resultText;
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                    document.getElementById('result').textContent = 'エラーが発生しました。';
+                });
+        });
+    </script>
+</body>
+</html>
